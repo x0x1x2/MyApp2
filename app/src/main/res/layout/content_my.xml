@@ -11,6 +11,7 @@
     <TextView android:id = "@+id/text_chat"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
         android:text="Hello World!" />
 
     <EditText android:id = "@+id/edit_message"
@@ -25,7 +26,7 @@
         android:layout_height="wrap_content"
         android:text="@string/button_send"
         android:layout_below="@id/text_chat"
-        android:onClick="sendMessage"/>
+        android:onClick="onClick_sendMessage"/>
 
 
 </RelativeLayout>
