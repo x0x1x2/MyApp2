@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by vxa on 26/07/2016.
  */
-public class RecvTask {
+public class RecvTaskOld {
     private final static int MESSAGE_SIZE = 1500;
     private DatagramSocket socket;
     private boolean runListener;
@@ -37,7 +37,7 @@ public class RecvTask {
                     Log.e("YS","recv:" +  new String(datagramPacket.getData(), 0, datagramPacket.getLength())  );
                     String recvMsg = new String(datagramPacket.getData(), 0, datagramPacket.getLength());
 
-                    recvHandler.post(new MyActivity.UpdateChat(recvMsg));
+                    //recvHandler.post(new MyActivity.UpdateChat(recvMsg));
 
                 }
             }catch (Exception ex){
@@ -47,7 +47,7 @@ public class RecvTask {
         }
     };
 
-    public RecvTask(int port, String address){
+    public RecvTaskOld(int port, String address){
         try {
 
             InetAddress laddr = InetAddress.getByName(address);
@@ -64,7 +64,7 @@ public class RecvTask {
         }
     }
 
-    public RecvTask(DatagramSocket socket, Handler recvHandler){
+    public RecvTaskOld(DatagramSocket socket, Handler recvHandler){
         try {
             this.socket = socket;
             this.recvHandler = recvHandler;
