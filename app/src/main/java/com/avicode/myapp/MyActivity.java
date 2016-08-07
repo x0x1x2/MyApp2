@@ -1,16 +1,16 @@
 package com.avicode.myapp;
 
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -19,40 +19,53 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.charset.Charset;
 
 public class MyActivity extends AppCompatActivity {
     private final String tag = "YS" +  " MyActivity";
-    public final static String EXTRA_MESSAGE = "com.avicode.myapp.MESSAGE";//UI
 
-    //public final static String serverAddr = "192.168.1.108"; // server address
-    public final static String serverAddr = "192.168.1.118"; // server address
+    //public final static String serverAddr = "192.168.1.13"; // server address
+    public final static String serverAddr = "172.20.10.2"; // server address
     public final static int serverPort = 25810; // server port
 
     private Socket socket=null;
     private RecvTask recvTask;
     private Handler recvHandler = new Handler();
 
+    private String userName;
+    private String serverName;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
         setContentView(R.layout.activity_my);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        //get user and server
+        ((TextView) findViewById(R.id.text_chat)).setMovementMethod(new ScrollingMovementMethod());//scroll bar
+        Intent intent = getIntent();
+        userName = android.os.Build.MODEL;
+        serverName = serverAddr;
+        try {
+            String message = intent.getStringExtra(DisplaySettingActivity.EXTRA_MESSAGE);
+            String[] params;
+            if (message != null) {
+                params = message.split("@");
 
-       FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                if (params != null && params.length == 2) {
+                    if (!params[0].isEmpty() ) //user name
+                        userName = params[0];
+                    if (!params[1].isEmpty()) // server name
+                        serverName = params[1];
+                }
             }
-        });
+        } catch (Exception ex) {
+            Log.e(tag, ex.getMessage());
+            userName = android.os.Build.MODEL;
+            serverName = serverAddr;
+        }
 
 
         //connect to server
@@ -61,7 +74,7 @@ public class MyActivity extends AppCompatActivity {
             public void run() {
                 try {
                     do {
-                        InetAddress lAddr = InetAddress.getByName(serverAddr);
+                        InetAddress lAddr = InetAddress.getByName(serverName);
                         Log.e(tag, "begin:" + lAddr.getHostAddress());
                         try {
                             //Create socket
@@ -71,7 +84,10 @@ public class MyActivity extends AppCompatActivity {
                             Log.e(tag, "onCreate socket exception " + ex.getMessage());
                         }
                         Log.e(tag, "end:" + lAddr.getHostName());
+                        Thread.sleep(5000,0);//wait 5sec
                     } while(socket == null);
+
+                    //Toast.makeText(MyActivity.this, "Settings clicked", Toast.LENGTH_LONG).show();
 
                     //create receive thread
                     recvTask = new RecvTask(socket, recvHandler);
@@ -94,23 +110,29 @@ public class MyActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        try {
+            // Handle action bar item clicks here. The action bar will
+            // automatically handle clicks on the Home/Up button, so long
+            // as you specify a parent activity in AndroidManifest.xml.
+            int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+            //noinspection SimplifiableIfStatement
+            if (id == R.id.action_settings) {
+                MyPrefFragment.instantiate(MyActivity.this, "MyPrefFragment");
+                return true;
+            }
+        }catch (Exception ex) {
+            Log.e(tag, ex.getMessage() );
         }
+            return super.onOptionsItemSelected(item);
 
-        return super.onOptionsItemSelected(item);
+
     }
 
-    private void echoMessage(String src, String message){
+    private void echoMessage( String message){
 
         TextView textView = (TextView) findViewById(R.id.text_chat);
-        textView.append("\n" + src +": "+message);
+        textView.append("\n" + message);
 
     }
     private void sendMessage(final String message){
@@ -123,7 +145,7 @@ public class MyActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    //byte[] buf = message.getBytes("UTF-8");
+
                     Log.e(tag, "begin send message:" + message);
 
                     BufferedWriter bufferOut = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -146,22 +168,15 @@ public class MyActivity extends AppCompatActivity {
     }
     // Send message
     public void onClick_sendMessage(View view){
-
-
+        //get message
         EditText editText = (EditText) findViewById(R.id.edit_message);
-        String message = editText.getText().toString();
+        String message = userName + ":" + editText.getText().toString();
 
-
-
-        //print
-        echoMessage("me", message);
+        //print to screen
+        echoMessage(message);
         //send to remote side
-
         sendMessage(message);
 
-//        Intent intent = new Intent(this, DisplayMessageActivity.class);
-//        intent.putExtra(EXTRA_MESSAGE, message);
-//        startActivity(intent);
         //clear text box
         editText.setText("");
     }
@@ -173,12 +188,12 @@ public class MyActivity extends AppCompatActivity {
         }
         @Override
         public void run(){
-            echoMessage("he", recvMessage);
+            echoMessage( recvMessage);
 
         }
     }
     public class RecvTask {
-        private final String tag = "YS" +  "RecvTask: ";
+        private final String tag = "YS" +  " RecvTask";
         private final static int MESSAGE_SIZE = 1500;
         private Socket socket;
         private boolean runListener;

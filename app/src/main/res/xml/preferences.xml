@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:key="pref_key_name"
+        android:title="@string/pref_name"
+        />
+    <EditTextPreference
+        android:key="pref_key_server_addr"
+        android:title="@string/pref_server_addr"
+        />
+</PreferenceScreen>
