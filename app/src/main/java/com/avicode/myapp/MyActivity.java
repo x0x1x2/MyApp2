@@ -25,8 +25,7 @@ import java.net.Socket;
 public class MyActivity extends AppCompatActivity {
     private final String tag = "YS" +  " MyActivity";
 
-    //public final static String serverAddr = "192.168.1.13"; // server address
-    public final static String serverAddr = "172.20.10.2"; // server address
+    public final static String serverAddr = "172.20.10.3"; // server address
     public final static int serverPort = 25810; // server port
 
     private Socket socket=null;
@@ -43,19 +42,20 @@ public class MyActivity extends AppCompatActivity {
         setContentView(R.layout.activity_my);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        //get user and server
+
         ((TextView) findViewById(R.id.text_chat)).setMovementMethod(new ScrollingMovementMethod());//scroll bar
-        Intent intent = getIntent();
+        Intent intent = getIntent(); //wait
+
+        //get user and server
         userName = android.os.Build.MODEL;
         serverName = serverAddr;
         try {
             String message = intent.getStringExtra(DisplaySettingActivity.EXTRA_MESSAGE);
-            String[] params;
             if (message != null) {
-                params = message.split("@");
+                String[] params = message.split("@");
 
-                if (params != null && params.length == 2) {
-                    if (!params[0].isEmpty() ) //user name
+                if (params.length == 2) {
+                    if (!params[0].isEmpty()) //user name
                         userName = params[0];
                     if (!params[1].isEmpty()) // server name
                         serverName = params[1];
@@ -87,6 +87,7 @@ public class MyActivity extends AppCompatActivity {
                         Thread.sleep(5000,0);//wait 5sec
                     } while(socket == null);
 
+                    Log.e(tag, "connected to :" + serverAddr);
                     //Toast.makeText(MyActivity.this, "Settings clicked", Toast.LENGTH_LONG).show();
 
                     //create receive thread
@@ -144,23 +145,22 @@ public class MyActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                BufferedWriter bufferOut;
                 try {
 
                     Log.e(tag, "begin send message:" + message);
 
-                    BufferedWriter bufferOut = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                    bufferOut = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
                     bufferOut.write(message);
                     bufferOut.flush();
                     //bufferOut.close();
 
                     Log.e(tag, "done send message:");
-                }catch (Exception ex)
-                {
+                } catch (Exception ex) {
                     ex.printStackTrace();
-                    Log.e(tag,"sendMessage exception" + ex.getMessage() );
+                    Log.e(tag, "sendMessage exception" + ex.getMessage());
                 }
-
             }
         }).start();
 
@@ -202,10 +202,11 @@ public class MyActivity extends AppCompatActivity {
         private Runnable runnableThread = new Runnable() {
             @Override
             public void run() {
+                BufferedReader bufferIn = null;
                 try {
 
                     Log.e(tag, "starting RecvTask");
-                    BufferedReader bufferIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    bufferIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     char[] recvMsgData = new char[MESSAGE_SIZE];
 
                     while(runListener){
@@ -228,6 +229,14 @@ public class MyActivity extends AppCompatActivity {
                 }catch (Exception ex){
                     ex.printStackTrace();
                     Log.e(tag, "Exception "+ex.getMessage() );
+                } finally {
+                    try {
+                        if (bufferIn != null)
+                            bufferIn.close();
+                        socket.close();
+                    } catch (Exception ex) {
+                        Log.e(tag, "Exception "+ex.getMessage() );
+                    }
                 }
             }
         };
@@ -248,6 +257,11 @@ public class MyActivity extends AppCompatActivity {
                 Log.e(tag,"c'tor Exception " +ex.getMessage() );
             }
         }
+        public void StopRecvTask()
+        {
+            runListener = false;  // reset flag
 
+
+        }
     }
 }
